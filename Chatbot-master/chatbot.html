@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Chatbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/botui/build/botui.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/botui/build/botui-theme-default.css" />
+  </head>
+  <body>
+    <div class="botui-app-container" id="hello-world">
+      <bot-ui></bot-ui>
+    </div>
+    <script src="https://cdn.jsdelivr.net/vue/latest/vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/botui/build/botui.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script>
+      var botui = new BotUI('hello-world');
+      var url="https://dbmaqof1kf.execute-api.us-west-2.amazonaws.com/s1/chatbot";
+      botui.message.bot('Hello');
+      botui.message.bot('type \'hello\', \'time\', or \'bye\'').then(function(){
+            askForInput();
+      });
+
+      var askForInput = function() {
+            botui.action.text({
+                  delay: 1000, 
+                  action: {
+                      size: 30,
+                      placeholder: 'type here ... '
+                  }
+              }).then(function(res){
+                getResponse(res.value);
+              })
+      };
+      
+      var getResponse = function(msgVal) {
+        var msgs = {
+                  "messages":[
+                    {
+                        "type": "string",
+                        "unstructured": {
+                            "id": "123",
+                            "text": msgVal,
+                            "timestamp": "Oct 13"
+                        }
+                    }
+                  ]
+            }; 
+        $.ajax({
+                type:"POST",
+                url: url,
+                data: JSON.stringify(msgs),
+                crossDomain : true,
+                contentType : "application/json",
+                dataType : "json",
+                headers: {"x-api-key": "eBT4UZwZJr15ZVKjtjY5G2BU7k3Uxih65RRzEjxp"},
+                success:function(result){
+                    botui.message.bot({
+                        delay: 500,
+                        content: result.messages[0].unstructured.text
+                    })
+                    askForInput();
+                },
+                error:function(){
+                    handleError();
+                }
+        });
+      }
+
+
+    var handleError = function() {
+        botui.message.bot({
+            delay: 500,
+            content: 'I don\'t understand'
+        }).then(function(){
+            askForInput();
+        });
+    }
+
+    </script>
+  </body>
+</html>

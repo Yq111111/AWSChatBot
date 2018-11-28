@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Chatbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/botui/build/botui.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/botui/build/botui-theme-default.css" />
+  </head>
+  <body>
+    <div class="botui-app-container" id="hello-world">
+      <bot-ui></bot-ui>
+    </div>
+    <script src="https://cdn.jsdelivr.net/vue/latest/vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/botui/build/botui.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.283.1.min.js"></script>
+    <script src="https://rawgit.com/aws/amazon-cognito-identity-js/master/dist/aws-cognito-sdk.min.js"></script>
+    <script src="https://rawgit.com/aws/amazon-cognito-identity-js/master/dist/amazon-cognito-identity.min.js"></script>
+    <script src="amazon-cognito-auth.min.js"></script>
+    <script>
+      // Operations when the web page is loaded.
+	var auth = initCognitoSDK();
+	var curUrl = window.location.href;
+	auth.parseCognitoWebResponse(curUrl);
+	var idtoken;
+	// Operations when signed in.
+    function showSignedIn(session) {
+		if (session) {
+			var idToken = session.getIdToken().getJwtToken();
+			idtoken = idToken;
+			if (idToken) {
+				var payload = idToken.split('.')[1];
+				var tokenobj = JSON.parse(atob(payload));
+				var formatted = JSON.stringify(tokenobj, undefined, 2);
+				console.log(formatted);
+			}
+			var accToken = session.getAccessToken().getJwtToken();
+			if (accToken) {
+				var payload = accToken.split('.')[1];
+				var tokenobj = JSON.parse(atob(payload));
+				var formatted = JSON.stringify(tokenobj, undefined, 2);
+				console.log(formatted);
+			}
+			var refToken = session.getRefreshToken().getToken();
+			if (refToken) {
+				console.log(refToken.substring(1, 20));
+			}
+			AWS.config.region = 'us-east-1';
+			AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+                    IdentityPoolId: 'us-east-1:d76ea39e-d8c8-480f-ab01-28ba828c724d',
+                    Logins: {
+                        'cognito-idp.us-east-1.amazonaws.com/us-east-1_pgJz2IkuT': idToken
+                    }
+            });
+		}
+		AWS.config.credentials.refresh((error) => {
+	        if (error) {
+	            console.error(error);
+	        } else {
+	            console.log('Successfully logged!');
+	        }
+    	});
+	}
+	// Initialize a cognito auth object.
+	function initCognitoSDK() {
+		var authData = {
+			ClientId : '1t833rifajk6oooo9infe935dm', // Your client id here
+					AppWebDomain : 'https://nyu-chatbot.auth.us-east-1.amazoncognito.com',
+					TokenScopesArray : ['phone', 'email', 'profile','openid', 'aws.cognito.signin.user.admin'], //e.g.,
+					RedirectUriSignIn : 'https://d1vsly4p1o7goy.cloudfront.net/chatbot.html',
+					RedirectUriSignOut : 'https://s3.amazonaws.com/chatbot-frontend-0828/chatbot.html',
+					IdentityProvider : 'Cognito', // e.g. 'Facebook',
+					UserPoolId : 'us-east-1_pgJz2IkuT', // Your user pool id here
+					AdvancedSecurityDataCollectionFlag : 'false'
+		};
+		var auth = new AmazonCognitoIdentity.CognitoAuth(authData);
+		// You can also set state parameter 
+		// auth.setState(<state parameter>);  
+		auth.userhandler = {
+			// onSuccess: <TODO: your onSuccess callback here>,
+			// onFailure: <TODO: your onFailure callback here>
+			// * E.g.
+			onSuccess: function(result) {
+				alert("Sign in success");
+				showSignedIn(result);
+			},
+			onFailure: function(err) {
+				alert("Error!" + err);
+			}
+		};
+		// The default response_type is "token", uncomment the next line will make it be "code".
+		// auth.useCodeGrantFlow();
+		return auth;
+	}
+	   
+        var botui = new BotUI('hello-world');
+        var url="https://dbmaqof1kf.execute-api.us-west-2.amazonaws.com/s1/chatbot";
+        botui.message.bot('Hello');
+        botui.message.bot('type \'hello\', \'time\', or \'bye\'').then(function(){
+              askForInput();
+        });
+
+      var askForInput = function() {
+            botui.action.text({
+                  delay: 1000, 
+                  action: {
+                      size: 30,
+                      placeholder: 'type here ... '
+                  }
+              }).then(function(res){
+                getResponse(res.value);
+              })
+      };
+      
+      var getResponse = function(msgVal) {
+        var msgs = {
+                  "messages":[
+                    {
+                        "type": "string",
+                        "unstructured": {
+                            "id": "123",
+                            "text": msgVal,
+                            "timestamp": "Oct 13"
+                        }
+                    }
+                  ]
+            }; 
+        $.ajax({
+                type:"POST",
+                url: url,
+                data: JSON.stringify(msgs),
+                crossDomain : true,
+                contentType : "application/json",
+                dataType : "json",
+                headers: {
+                	'Authorization':idtoken, 
+                	"x-api-key": "eBT4UZwZJr15ZVKjtjY5G2BU7k3Uxih65RRzEjxp"
+                },
+                success:function(result){
+                    botui.message.bot({
+                        delay: 500,
+                        content: result.messages[0].unstructured.text
+                    })
+                    askForInput();
+                },
+                error:function(){
+                    handleError();
+                }
+        });
+      }
+
+
+    var handleError = function() {
+        botui.message.bot({
+            delay: 500,
+            content: 'I don\'t understand'
+        }).then(function(){
+            askForInput();
+        });
+    }
+
+    </script>
+  </body>
+</html>

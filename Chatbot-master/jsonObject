@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "type": "string",
+      "unstructured": {
+        "id": "123",
+        "text": "testtest",
+        "timestamp": "Oct 13"
+      }
+    },
+    {
+      "type": "string",
+      "unstructured": {
+        "id": "456",
+        "text": "testtest2",
+        "timestamp": "Oct 14"
+      }
+    }
+  ]
+}
