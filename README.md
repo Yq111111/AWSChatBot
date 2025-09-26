@@ -3,5 +3,5 @@
 Architecture based on AWS S3/Cognito/API Gateway/Lambda/Lex/SQS/SNS/DynamoDB
 Backend: Java/PHP
 
-Combined with Yelp API to help to recommend & text the restaurants nearby using real-time API v2/v3/v4.
+Combined with Yelp API to help to recommend & text the restaurants nearby using real-time API v2/v3/v4/v5.
 
