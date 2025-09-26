@@ -1,4 +1,4 @@
-# Chatbot
+# Chatbot Project
 
 Architecture based on AWS S3/Cognito/API Gateway/Lambda/Lex/SQS/SNS/DynamoDB
 Backend: Java
